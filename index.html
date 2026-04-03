@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PrintQueue — Office Printer Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="printer-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4fffb0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"/>
+          <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>PrintQueue</h1>
+        <p>Office Printer Simulation · FIFO Data Structure</p>
+      </div>
+    </div>
+    <div class="status-pill"><div class="pulse"></div>PRINTER ONLINE</div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Jobs in Queue</div><div class="stat-val" id="s-count">0</div></div>
+    <div class="stat"><div class="stat-label">Pages Pending</div><div class="stat-val" id="s-pages">0</div></div>
+    <div class="stat"><div class="stat-label">Jobs Processed</div><div class="stat-val" id="s-done">0</div></div>
+  </div>
+
+  <!-- Layout -->
+  <div class="layout">
+
+    <!-- Left: Queue + snapshot + console -->
+    <div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="dot"></span>Queue State</div>
+          <span style="font-size:10px;color:var(--text3);letter-spacing:.05em;">FIRST IN · FIRST OUT</span>
+        </div>
+        <!-- Peek banner -->
+        <div class="peek-banner" id="peek-banner">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span id="peek-text"></span>
+        </div>
+        <!-- Queue list -->
+        <div class="queue-scroll"><div id="queue-list"></div></div>
+        <!-- printQueue snapshot -->
+        <div class="pq-snapshot" id="pq-snapshot">
+          <div class="pq-snap-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            printQueue() — snapshot
+          </div>
+          <div id="pq-rows"></div>
+          <div class="pq-footer"><span id="pq-count"></span><span id="pq-pages"></span></div>
+        </div>
+      </div>
+
+      <!-- Console -->
+      <div class="console">
+        <div class="con-head">
+          <div class="con-title">
+            <div class="con-dots"><span class="cdot r"></span><span class="cdot y"></span><span class="cdot g"></span></div>
+            Console Output
+          </div>
+          <button class="con-clear" onclick="clearConsole()">Clear</button>
+        </div>
+        <div class="con-body" id="con-body"><div class="con-empty">// Awaiting operations…</div></div>
+      </div>
+    </div>
+
+    <!-- Right: Add + Quick Add + Operations -->
+    <div>
+
+      <!-- Add Job -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="dot"></span>Add Print Job</div>
+          <span style="font-size:10px;color:var(--text3);">Enter ↵ to enqueue</span>
+        </div>
+        <div class="panel-body">
+          <div class="field">
+            <label>Document Name</label>
+            <input type="text" id="job-name" placeholder="e.g. Report.pdf"/>
+          </div>
+          <div class="frow">
+            <div class="field">
+              <label>Priority</label>
+              <select id="job-priority">
+                <option value="normal">Normal</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+            <div class="field short">
+              <label>Pages</label>
+              <input type="number" id="job-pages" value="1" min="1" max="999"/>
+            </div>
+          </div>
+          <button class="btn-add" onclick="op_enqueue()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            enqueue( job )
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Add -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="dot amber"></span>Quick Add</div>
+        </div>
+        <div class="panel-body">
+          <div class="quick-grid">
+            <button class="qbtn" onclick="quickAdd('Invoice_March.pdf',2)">Invoice.pdf</button>
+            <button class="qbtn" onclick="quickAdd('Meeting_Notes.docx',5)">Meeting Notes</button>
+            <button class="qbtn" onclick="quickAdd('Annual_Report.pdf',48)">Annual Report</button>
+            <button class="qbtn" onclick="quickAdd('Contract_Draft.docx',12)">Contract</button>
+            <button class="qbtn" onclick="quickAdd('Slide_Deck.pptx',20)">Slide Deck</button>
+            <button class="qbtn" onclick="quickAdd('Payslip_April.pdf',1)">Payslip</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Queue Operations -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="dot blue"></span>Queue Operations</div>
+        </div>
+        <div class="panel-body">
+          <div class="ops">
+
+            <button class="op op-dequeue" onclick="op_dequeue()">
+              <div class="op-ico">▶</div>
+              <div class="op-info">
+                <div class="op-name">dequeue()</div>
+                <div class="op-desc">Remove &amp; process the front job</div>
+              </div>
+              <span class="op-kbd">D</span>
+            </button>
+
+            <button class="op op-peek" onclick="op_peek()">
+              <div class="op-ico">◎</div>
+              <div class="op-info">
+                <div class="op-name">peek()</div>
+                <div class="op-desc">Inspect front job without removing</div>
+              </div>
+              <span class="op-kbd">P</span>
+            </button>
+
+            <button class="op op-isempty" onclick="op_isEmpty()">
+              <div class="op-ico">?</div>
+              <div class="op-info">
+                <div class="op-name">isEmpty()</div>
+                <div class="op-desc">Check if queue has no jobs</div>
+              </div>
+              <span class="op-kbd">I</span>
+            </button>
+
+            <button class="op op-print" onclick="op_printQueue()">
+              <div class="op-ico">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              </div>
+              <div class="op-info">
+                <div class="op-name">printQueue()</div>
+                <div class="op-desc">Display all jobs in the queue</div>
+              </div>
+              <span class="op-kbd">Q</span>
+            </button>
+
+            <button class="op op-clear" onclick="op_clear()">
+              <div class="op-ico">✕</div>
+              <div class="op-info">
+                <div class="op-name">clear()</div>
+                <div class="op-desc">Remove all jobs from the queue</div>
+              </div>
+              <span class="op-kbd">X</span>
+            </button>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Source Code Collapsible -->
+  <div class="code-section">
+    <div class="code-toggle" id="code-toggle" onclick="toggleCode()">
+      <div class="code-toggle-left">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fffb0" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        View Source — Queue &amp; PrinterQueue Implementation
+      </div>
+      <span class="code-chevron" id="code-chev">▼</span>
+    </div>
+    <div class="code-body" id="code-body">
+<pre>
+<span class="cm">// ─────────────────────────────────────────
+// Queue — Core FIFO Data Structure
+// ─────────────────────────────────────────</span>
+
+<span class="kw">class</span> <span class="cl">Queue</span> {
+  <span class="fn">constructor</span>() {
+    <span class="kw">this</span>.items = [];       <span class="cm">// internal array storage</span>
+  }
+
+  <span class="cm">/** Add item to the back of the queue */</span>
+  <span class="fn">enqueue</span>(item) {
+    <span class="kw">this</span>.items.<span class="fn">push</span>(item);
+  }
+
+  <span class="cm">/** Remove and return item from the front */</span>
+  <span class="fn">dequeue</span>() {
+    <span class="kw">if</span> (<span class="kw">this</span>.<span class="fn">isEmpty</span>()) <span class="kw">return null</span>;
+    <span class="kw">return this</span>.items.<span class="fn">shift</span>();
+  }
+
+  <span class="cm">/** Inspect front item without removing */</span>
+  <span class="fn">peek</span>() {
+    <span class="kw">if</span> (<span class="kw">this</span>.<span class="fn">isEmpty</span>()) <span class="kw">return null</span>;
+    <span class="kw">return this</span>.items[<span class="num">0</span>];
+  }
+
+  <span class="cm">/** Returns true if queue has no items */</span>
+  <span class="fn">isEmpty</span>() { <span class="kw">return this</span>.items.length === <span class="num">0</span>; }
+  <span class="fn">size</span>()    { <span class="kw">return this</span>.items.length; }
+  <span class="fn">toArray</span>() { <span class="kw">return</span> [...<span class="kw">this</span>.items]; }
+}
+
+
+<span class="cm">// ─────────────────────────────────────────
+// PrinterQueue — Printer System Layer
+// ─────────────────────────────────────────</span>
+
+<span class="kw">class</span> <span class="cl">PrinterQueue</span> {
+  <span class="fn">constructor</span>() {
+    <span class="kw">this</span>.queue     = <span class="kw">new</span> <span class="cl">Queue</span>();
+    <span class="kw">this</span>.processed = <span class="num">0</span>;
+  }
+
+  <span class="cm">/** Create a job object and enqueue it */</span>
+  <span class="fn">addJob</span>(name, pages, priority = <span class="str">'normal'</span>) {
+    <span class="kw">const</span> job = {
+      id       : Date.<span class="fn">now</span>() + Math.<span class="fn">random</span>(),
+      name     : name.<span class="fn">trim</span>() || <span class="str">'Untitled'</span>,
+      pages    : <span class="fn">parseInt</span>(pages) || <span class="num">1</span>,
+      priority,
+    };
+    <span class="kw">this</span>.queue.<span class="fn">enqueue</span>(job);
+    <span class="kw">return</span> job;
+  }
+
+  <span class="cm">/** Process (print) the front job */</span>
+  <span class="fn">processJob</span>() {
+    <span class="kw">const</span> job = <span class="kw">this</span>.queue.<span class="fn">dequeue</span>();
+    <span class="kw">if</span> (job) <span class="kw">this</span>.processed++;
+    <span class="kw">return</span> job;
+  }
+
+  <span class="cm">/** Print all jobs currently in the queue */</span>
+  <span class="fn">printQueue</span>() { <span class="kw">return this</span>.queue.<span class="fn">toArray</span>(); }
+
+  <span class="fn">peek</span>()    { <span class="kw">return this</span>.queue.<span class="fn">peek</span>(); }
+  <span class="fn">isEmpty</span>() { <span class="kw">return this</span>.queue.<span class="fn">isEmpty</span>(); }
+  <span class="fn">clear</span>()   { <span class="kw">this</span>.queue = <span class="kw">new</span> <span class="cl">Queue</span>(); }
+
+  <span class="kw">get</span> <span class="fn">count</span>()      { <span class="kw">return this</span>.queue.<span class="fn">size</span>(); }
+  <span class="kw">get</span> <span class="fn">totalPages</span>() {
+    <span class="kw">return this</span>.queue.<span class="fn">toArray</span>().<span class="fn">reduce</span>((s, j) => s + j.pages, <span class="num">0</span>);
+  }
+}
+</pre>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script src="./script.js"></script>
+</body>
+</html>
